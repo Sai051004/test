@@ -13,3 +13,6 @@ jobs:
 
       - name: Run a test command
         run: echo "Hello GitHub Actions"
+
+      - name: Print secret
+        run: echo "Secret is ${{ secrets.MY_SECRET }}"
