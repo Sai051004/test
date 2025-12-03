@@ -1,18 +1,93 @@
-name: CI Test
+name: CI Pipeline
 
-on: 
+on:
   push:
+    branches:
+      - main
+      - dev
 
 jobs:
+  # -------------------------
+  # 1. Build Job
+  # -------------------------
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Run a test command
-        run: echo "Hello GitHub Actions"
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run build
+        run: npm run build
 
       - name: Print secret
         run: echo "Secret is ${{ secrets.MY_SECRET }}"
+
+  # -------------------------
+  # 2. Test Job
+  # -------------------------
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Run lint checks
+        run: npm run lint
+
+  # -------------------------
+  # 3. Integration Tests Job
+  # -------------------------
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start app in background
+        run: npm start &
+
+      - name: Run integration tests
+        run: npm run test:integration
+
+  # -------------------------
+  # 4. Deploy Job (Depends on Test + Integration)
+  # -------------------------
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test, integration-tests]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Fake deploy
+        run: echo "Deploying to production..."
